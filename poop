@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>명상 타이머</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        
+        .timer-container {
+            text-align: center;
+            padding: 3rem;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border-radius: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            width: 90%;
+        }
+        
+        .timer-title {
+            color: white;
+            font-size: 2rem;
+            font-weight: 300;
+            margin-bottom: 2rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        
+        .timer-display {
+            position: relative;
+            margin: 3rem 0;
+        }
+        
+        .timer-circle {
+            width: 280px;
+            height: 280px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        
+        .timer-circle.pulsing {
+            animation: pulse 2s infinite;
+        }
+        
+        .timer-circle.warning {
+            animation: warning-pulse 1s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.4); }
+            50% { transform: scale(1.05); box-shadow: 0 0 0 20px rgba(255, 255, 255, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
+        }
+        
+        @keyframes warning-pulse {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 100, 100, 0.6); }
+            50% { transform: scale(1.08); box-shadow: 0 0 0 25px rgba(255, 100, 100, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 100, 100, 0); }
+        }
+        
+        .timer-text {
+            color: white;
+            font-size: 4rem;
+            font-weight: 700;
+            letter-spacing: 3px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+        
+        .timer-label {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 1rem;
+            font-weight: 300;
+            margin-top: 0.5rem;
+            letter-spacing: 1px;
+        }
+        
+        .progress-ring {
+            position: absolute;
+            top: -3px;
+            left: -3px;
+            width: 286px;
+            height: 286px;
+            transform: rotate(-90deg);
+        }
+        
+        .progress-ring-circle {
+            fill: none;
+            stroke: rgba(255, 255, 255, 0.6);
+            stroke-width: 6;
+            stroke-linecap: round;
+            stroke-dasharray: 898;
+            stroke-dashoffset: 898;
+            transition: stroke-dashoffset 1s linear;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 2rem;
+        }
+        
+        .btn {
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 50px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            letter-spacing: 1px;
+            min-width: 120px;
+        }
+        
+        .btn-primary {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .btn-primary:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+        
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+        
+        .time-presets {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+        
+        .preset-btn {
+            padding: 0.5rem 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+        
+        .preset-btn:hover, .preset-btn.active {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-1px);
+        }
+        
+        .notification {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            background: rgba(255, 255, 255, 0.95);
+            color: #333;
+            padding: 1rem 1.5rem;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+            font-weight: 600;
+        }
+        
+        .notification.show {
+            transform: translateX(0);
+        }
+        
+        @media (max-width: 768px) {
+            .timer-container {
+                padding: 2rem;
+            }
+            
+            .timer-circle {
+                width: 220px;
+                height: 220px;
+            }
+            
+            .progress-ring {
+                width: 226px;
+                height: 226px;
+            }
+            
+            .timer-text {
+                font-size: 3rem;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .btn {
+                width: 100%;
+                max-width: 200px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="timer-container">
+        <h1 class="timer-title">명상 타이머</h1>
+        
+        <div class="time-presets">
+            <button class="preset-btn" onclick="setTimer(5)">5분</button>
+            <button class="preset-btn" onclick="setTimer(10)">10분</button>
+            <button class="preset-btn active" onclick="setTimer(15)">15분</button>
+            <button class="preset-btn" onclick="setTimer(20)">20분</button>
+            <button class="preset-btn" onclick="setTimer(30)">30분</button>
+        </div>
+        
+        <div class="timer-display">
+            <svg class="progress-ring">
+                <circle class="progress-ring-circle" cx="143" cy="143" r="143"></circle>
+            </svg>
+            <div class="timer-circle pulsing" id="timerCircle">
+                <div>
+                    <div class="timer-text" id="timerText">15:00</div>
+                    <div class="timer-label">남은 시간</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button class="btn btn-primary" id="startBtn" onclick="toggleTimer()">시작</button>
+            <button class="btn btn-secondary" onclick="resetTimer()">리셋</button>
+        </div>
+    </div>
+    
+    <div class="notification" id="notification">
+        🧘‍♀️ 명상 시간이 완료되었습니다!
+    </div>
+
+    <script>
+        let timerInterval;
+        let totalSeconds = 15 * 60; // 15분
+        let currentSeconds = totalSeconds;
+        let isRunning = false;
+        
+        const timerText = document.getElementById('timerText');
+        const startBtn = document.getElementById('startBtn');
+        const timerCircle = document.getElementById('timerCircle');
+        const progressCircle = document.querySelector('.progress-ring-circle');
+        const notification = document.getElementById('notification');
+        
+        // 진행률 링 초기화
+        const circumference = 2 * Math.PI * 143;
+        progressCircle.style.strokeDasharray = circumference;
+        
+        function updateDisplay() {
+            const minutes = Math.floor(currentSeconds / 60);
+            const seconds = currentSeconds % 60;
+            timerText.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            
+            // 진행률 업데이트
+            const progress = (totalSeconds - currentSeconds) / totalSeconds;
+            const offset = circumference - (progress * circumference);
+            progressCircle.style.strokeDashoffset = offset;
+            
+            // 마지막 1분일 때 경고 애니메이션
+            if (currentSeconds <= 60 && currentSeconds > 0 && isRunning) {
+                timerCircle.className = 'timer-circle warning';
+            } else if (isRunning) {
+                timerCircle.className = 'timer-circle pulsing';
+            } else {
+                timerCircle.className = 'timer-circle';
+            }
+        }
+        
+        function toggleTimer() {
+            if (isRunning) {
+                pauseTimer();
+            } else {
+                startTimer();
+            }
+        }
+        
+        function startTimer() {
+            if (currentSeconds <= 0) return;
+            
+            isRunning = true;
+            startBtn.textContent = '일시정지';
+            timerCircle.className = 'timer-circle pulsing';
+            
+            timerInterval = setInterval(() => {
+                currentSeconds--;
+                updateDisplay();
+                
+                if (currentSeconds <= 0) {
+                    completeTimer();
+                }
+            }, 1000);
+        }
+        
+        function pauseTimer() {
+            isRunning = false;
+            startBtn.textContent = '시작';
+            timerCircle.className = 'timer-circle';
+            clearInterval(timerInterval);
+        }
+        
+        function resetTimer() {
+            isRunning = false;
+            currentSeconds = totalSeconds;
+            startBtn.textContent = '시작';
+            timerCircle.className = 'timer-circle';
+            clearInterval(timerInterval);
+            updateDisplay();
+        }
+        
+        function setTimer(minutes) {
+            if (isRunning) return;
+            
+            totalSeconds = minutes * 60;
+            currentSeconds = totalSeconds;
+            updateDisplay();
+            
+            // 활성 프리셋 버튼 업데이트
+            document.querySelectorAll('.preset-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+        }
+        
+        function completeTimer() {
+            isRunning = false;
+            currentSeconds = 0;
+            startBtn.textContent = '시작';
+            timerCircle.className = 'timer-circle';
+            clearInterval(timerInterval);
+            updateDisplay();
+            
+            // 완료 알림 표시
+            showNotification();
+            
+            // 시각적 완료 효과
+            timerCircle.style.background = 'rgba(100, 255, 100, 0.2)';
+            setTimeout(() => {
+                timerCircle.style.background = 'rgba(255, 255, 255, 0.1)';
+            }, 3000);
+        }
+        
+        function showNotification() {
+            notification.classList.add('show');
+            
+            // 3초 후 알림 숨기기
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 5000);
+        }
+        
+        // 초기 디스플레이 업데이트
+        updateDisplay();
+        
+        // 키보드 단축키
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                toggleTimer();
+            } else if (e.code === 'Escape') {
+                resetTimer();
+            }
+        });
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96acf5834339ea31',t:'MTc1NDQ2Njc5MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
